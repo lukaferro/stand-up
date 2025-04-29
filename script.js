@@ -1,8 +1,6 @@
 async function fetchCompanyName(apiKey) {
     try {
-        console.log('URL chiamato:', '/api/company-name');
-        console.log('Intestazioni:', { 'x-api-key': apiKey });
-        const response = await fetch('/api/company-name', {
+        const response = await fetch('https://<stand-up>.vercel.app/api/company-name', {
             method: 'GET',
             headers: {
                 'x-api-key': apiKey
