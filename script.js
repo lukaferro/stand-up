@@ -1,6 +1,6 @@
 async function fetchCompanyName(apiKey) {
     try {
-        const response = await fetch('/api/company-name', {
+        const response = await fetch('https://<stand-up>.vercel.app/api/company-name', {
             method: 'GET',
             headers: {
                 'x-api-key': apiKey
@@ -11,6 +11,8 @@ async function fetchCompanyName(apiKey) {
             const data = await response.json();
             return data.companyName;
         } else {
+            const errorText = await response.text();
+            console.error('Errore API:', errorText);
             throw new Error('API Key non valida o errore nella richiesta.');
         }
     } catch (error) {
