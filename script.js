@@ -1,6 +1,6 @@
 function fetchCompanyNameWithXHR(apiKey, callback) {
     const xhr = new XMLHttpRequest();
-    xhr.open('GET', 'https://stand-up.vercel.app/api/company-name', true);
+    xhr.open('GET', 'https://stand-up-eta.vercel.app/api/company-name', true);
     xhr.setRequestHeader('x-api-key', apiKey);
 
     xhr.onreadystatechange = function () {
