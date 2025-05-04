@@ -22,11 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Ordina i meeting dal più recente al più vecchio
       meetings.forEach(meeting => {
+        const durationHours = Math.floor(meeting.durationMins / 60);
+        const durationMinutes = meeting.durationMins % 60;
+        const durationSeconds = meeting.durationSecs || 0;
+
         const listItem = document.createElement('li');
         listItem.innerHTML = `
           <div>
             <strong>Data:</strong> ${new Date(meeting.date).toLocaleDateString('it-IT')} 
-            <strong>Durata:</strong> ${meeting.durationMins} minuti
+            <strong>Durata:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}:${String(durationSeconds).padStart(2, '0')}
             <button class="expandBtn">Espandi</button>
           </div>
           <div class="details" style="display: none;">
