@@ -78,70 +78,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   endStandUpBtn.addEventListener('click', async () => {
     const standUpsInfo = [];
     document.querySelectorAll('#devTable tbody tr').forEach(row => {
-        const devId = row.querySelector('button').dataset.devId;
-        const notes = row.querySelector('input').value;
-        const durationMins = parseInt(row.querySelector('button').dataset.duration || '0', 10);
+      const devId = row.querySelector('button').dataset.devId;
+      const notes = row.querySelector('input').value;
+      const durationMins = parseInt(row.querySelector('button').dataset.duration || '0', 10);
 
-        standUpsInfo.push({
-            devId: parseInt(devId, 10),
-            durationMins,
-            notes
-        });
+      standUpsInfo.push({
+        devId: parseInt(devId, 10),
+        durationMins,
+        notes
+      });
     });
 
     try {
-        const response = await fetch('https://standupparo-apis.vercel.app/api/stand-up', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey
-            },
-            body: JSON.stringify({
-                date: startTime.toISOString(),
-                durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0),
-                standUpsInfo
-            })
-        });
+      const response = await fetch('https://standupparo-apis.vercel.app/api/stand-up', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify({
+          date: startTime.toISOString(),
+          durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0),
+          standUpsInfo
+        })
+      });
 
-        if (response.ok) {
-            alert('Stand Up Meeting salvato con successo.');
-            window.location.href = 'history.html';
-        } else {
-            alert('Errore durante la terminazione dello Stand Up Meeting.');
-        }
+      if (response.ok) {
+        alert('Stand Up Meeting salvato con successo.');
+        window.location.href = 'history.html';
+      } else {
+        alert('Errore durante la terminazione dello Stand Up Meeting.');
+      }
     } catch (error) {
-        console.error('Errore:', error);
-        alert('Errore di rete.');
+      console.error('Errore:', error);
+      alert('Errore di rete.');
     }
-});
-
-async function showMeetingRecap(meetingId) {
-    try {
-        const response = await fetch(`https://standupparo-apis.vercel.app/api/stand-up?id=${meetingId}`, {
-            method: 'GET',
-            headers: {
-                'x-api-key': apiKey
-            }
-        });
-
-        if (response.ok) {
-            const meetingDetails = await response.json();
-            let recapMessage = `Recap Meeting:\nData: ${meetingDetails.date}\nDurata Totale: ${meetingDetails.durationMins} minuti\n\nDettagli:\n`;
-
-            meetingDetails.standUpsInfo.forEach(info => {
-                recapMessage += `- Sviluppatore ID: ${info.devId}\n  Durata: ${info.durationMins} minuti\n  Note: ${info.notes || 'Nessuna'}\n\n`;
-            });
-
-            alert(recapMessage);
-            window.location.href = 'dashboard.html';
-        } else {
-            alert('Errore nel recupero del recap del meeting.');
-        }
-    } catch (error) {
-        console.error('Errore:', error);
-        alert('Errore di rete.');
-    }
-}
+  });
 
   function togglePlayPause(button, timerSpan) {
     if (button.textContent === 'Play') {

@@ -67,6 +67,12 @@ async function loadMeetingDetails(meetingId, detailsContainerId) {
   const apiKey = localStorage.getItem('apiKey');
   const detailsContainer = document.getElementById(detailsContainerId);
 
+  if (!apiKey) {
+    alert('API Key non trovata. Effettua nuovamente il login.');
+    window.location.href = 'index.html';
+    return;
+  }
+
   try {
     const response = await fetch(`https://standupparo-apis.vercel.app/api/stand-up?id=${meetingId}`, {
       method: 'GET',
@@ -80,21 +86,25 @@ async function loadMeetingDetails(meetingId, detailsContainerId) {
       console.log('Meeting details:', meetingDetails);
       detailsContainer.innerHTML = '';
 
-      meetingDetails.standUpsInfo.forEach(info => {
-        const detailItem = document.createElement('li');
-        detailItem.innerHTML = `
-          <strong>Sviluppatore ID:</strong> ${info.devId} <br>
-          <strong>Durata:</strong> ${info.durationMins} minuti <br>
-          <strong>Note:</strong> ${info.notes || 'Nessuna'}
-        `;
-        detailsContainer.appendChild(detailItem);
-      });
+      if (meetingDetails.standUpsInfo && meetingDetails.standUpsInfo.length > 0) {
+        meetingDetails.standUpsInfo.forEach(info => {
+          const detailItem = document.createElement('li');
+          detailItem.innerHTML = `
+            <strong>Sviluppatore ID:</strong> ${info.devId} <br>
+            <strong>Durata:</strong> ${info.durationMins} minuti <br>
+            <strong>Note:</strong> ${info.notes || 'Nessuna'}
+          `;
+          detailsContainer.appendChild(detailItem);
+        });
+      } else {
+        detailsContainer.innerHTML = '<p>Nessun dettaglio disponibile per questo meeting.</p>';
+      }
     } else {
-      console.error('Errore API:', response.status);
+      console.error('Errore API:', response.status, response.statusText);
       alert('Errore nel recupero dei dettagli del meeting.');
     }
   } catch (error) {
-    console.error('Errore:', error);
-    alert('Errore di rete.');
+    console.error('Errore di rete:', error);
+    alert('Errore di rete. Controlla la connessione.');
   }
 }
