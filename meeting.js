@@ -81,13 +81,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       const devId = row.querySelector('button').dataset.devId;
       const notes = row.querySelector('input').value;
       const durationMins = parseInt(row.querySelector('button').dataset.duration || '0', 10);
+      const durationSecs = parseInt(row.querySelector('button').dataset.durationSecs || '0', 10);
 
       standUpsInfo.push({
         devId: parseInt(devId, 10),
         durationMins,
+        durationSecs,
         notes
       });
     });
+
+    // Salva i dati nel localStorage
+    const meetingData = {
+      date: new Date().toISOString(),
+      durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0),
+      durationSecs: standUpsInfo.reduce((sum, info) => sum + (info.durationSecs || 0), 0),
+      standUpsInfo
+    };
+
+    const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+    savedMeetings.push(meetingData);
+    localStorage.setItem('meetings', JSON.stringify(savedMeetings));
 
     try {
       const response = await fetch('https://standupparo-apis.vercel.app/api/stand-up', {
@@ -96,11 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type': 'application/json',
           'x-api-key': apiKey
         },
-        body: JSON.stringify({
-          date: startTime.toISOString(),
-          durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0),
-          standUpsInfo
-        })
+        body: JSON.stringify(meetingData)
       });
 
       if (response.ok) {
@@ -134,7 +144,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const startTime = parseInt(button.dataset.startTime, 10);
       const elapsedMs = Date.now() - startTime;
       const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
+      const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
       button.dataset.duration = (parseInt(button.dataset.duration || '0', 10) + elapsedMinutes).toString();
+      button.dataset.durationSecs = (parseInt(button.dataset.durationSecs || '0', 10) + elapsedSeconds).toString();
     }
   }
 });
