@@ -19,16 +19,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (response.ok) {
       const meetings = await response.json();
 
-      meetings.forEach(meeting => {
-        addMeetingToList(meeting, meetingList);
+      // Recupera le note dal localStorage
+      const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+
+      // Combina i dati dell'API con le note locali
+      const combinedMeetings = meetings.map(apiMeeting => {
+        const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === apiMeeting.date);
+        return {
+          ...apiMeeting,
+          notes: localMeeting ? localMeeting.standUpsInfo : []
+        };
       });
 
-      const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
-      const filteredSavedMeetings = savedMeetings.filter(savedMeeting =>
-        !meetings.some(apiMeeting => apiMeeting.date === savedMeeting.date)
-      );
-
-      filteredSavedMeetings.forEach(meeting => {
+      // Aggiungi i meeting alla lista
+      combinedMeetings.forEach(meeting => {
         addMeetingToList(meeting, meetingList);
       });
     } else {
@@ -38,39 +42,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Errore:', error);
     alert('Errore di rete.');
   }
-
-  const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
-  savedMeetings.forEach(meeting => {
-    const durationHours = Math.floor(meeting.durationMins / 60);
-    const durationMinutes = meeting.durationMins % 60;
-
-    const listItem = document.createElement('li');
-    listItem.innerHTML = `
-      <div>
-        <strong>Data:</strong> ${new Date(meeting.date).toLocaleDateString('it-IT')} 
-        <strong>Durata:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}
-        <button class="expandBtn">Espandi</button>
-      </div>
-      <div class="details" style="display: none;">
-        <p><strong>Dettagli:</strong></p>
-        <ul id="details-${meeting.date}"></ul>
-      </div>
-    `;
-
-    const expandBtn = listItem.querySelector('.expandBtn');
-    const detailsDiv = listItem.querySelector('.details');
-
-    expandBtn.addEventListener('click', async () => {
-      if (detailsDiv.style.display === 'none') {
-        detailsDiv.style.display = 'block';
-        await loadMeetingDetails(meeting.date, `details-${meeting.date}`);
-      } else {
-        detailsDiv.style.display = 'none';
-      }
-    });
-
-    meetingList.appendChild(listItem);
-  });
 });
 
 async function loadMeetingDetails(meetingId, detailsContainerId) {
@@ -114,21 +85,27 @@ function addMeetingToList(meeting, meetingList) {
       <button class="expandBtn">Espandi</button>
     </div>
     <div class="details" style="display: none;">
-      <p><strong>Dettagli:</strong></p>
-      <ul id="details-${meeting.date}"></ul>
+      <p><strong>Note:</strong></p>
+      <ul>
+        ${meeting.notes && meeting.notes.length > 0
+          ? meeting.notes.map(note => `
+            <li>
+              <strong>Sviluppatore ID:</strong> ${note.devId} <br>
+              <strong>Durata:</strong> ${note.durationMins} minuti <br>
+              <strong>Note:</strong> ${note.notes || 'Nessuna'}
+            </li>
+          `).join('')
+          : '<p>Nessuna nota disponibile.</p>'
+        }
+      </ul>
     </div>
   `;
 
   const expandBtn = listItem.querySelector('.expandBtn');
   const detailsDiv = listItem.querySelector('.details');
 
-  expandBtn.addEventListener('click', async () => {
-    if (detailsDiv.style.display === 'none') {
-      detailsDiv.style.display = 'block';
-      await loadMeetingDetails(meeting.date, `details-${meeting.date}`);
-    } else {
-      detailsDiv.style.display = 'none';
-    }
+  expandBtn.addEventListener('click', () => {
+    detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
   });
 
   meetingList.appendChild(listItem);
