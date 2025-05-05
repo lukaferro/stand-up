@@ -144,3 +144,81 @@ input[type="text"] {
 .dashboard-btn:hover {
   background-color: #0056b3;
 }
+
+.meeting-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  list-style-type: none;
+
+}
+
+.meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.meeting-header .expandBtn {
+  padding: 5px 10px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.meeting-header .expandBtn:hover {
+  background-color: #0056b3;
+}
+
+.meeting-header strong {
+  font-size: 14px;
+}
+
+.details {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.details p {
+  font-size: 14px;
+}
+
+.notes-list {
+  padding: 0;
+  margin: 0;
+}
+
+.note-item {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  background-color: #f4f4f9;
+}
+
+.note-item p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.no-notes {
+  font-style: italic;
+  color: #888;
+}
+
+timer {
+  font-weight: bold;
+  color: #333;
+}

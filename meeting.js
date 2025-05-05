@@ -91,11 +91,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
-    // Salva i dati nel localStorage
+    const totalSeconds = standUpsInfo.reduce((sum, info) => sum + info.durationSecs, 0);
+    const additionalMinutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+
     const meetingData = {
       date: new Date().toISOString(),
-      durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0),
-      durationSecs: standUpsInfo.reduce((sum, info) => sum + (info.durationSecs || 0), 0),
+      durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0) + additionalMinutes,
+      durationSecs: remainingSeconds,
       standUpsInfo
     };
 
@@ -126,9 +129,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function togglePlayPause(button, timerSpan) {
+    document.querySelectorAll('#devTable tbody tr button').forEach(otherButton => {
+      if (otherButton !== button && otherButton.textContent === 'Pausa') {
+        otherButton.textContent = 'Play';
+        clearInterval(otherButton.timerInterval);
+
+        const startTime = parseInt(otherButton.dataset.startTime, 10);
+        const elapsedMs = Date.now() - startTime;
+        const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
+        const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
+
+        const totalSeconds = parseInt(otherButton.dataset.durationSecs || '0', 10) + elapsedSeconds;
+        const additionalMinutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = totalSeconds % 60;
+
+        otherButton.dataset.duration = (parseInt(otherButton.dataset.duration || '0', 10) + elapsedMinutes + additionalMinutes).toString();
+        otherButton.dataset.durationSecs = remainingSeconds.toString();
+      }
+    });
+
     if (button.textContent === 'Play') {
       button.textContent = 'Pausa';
-      button.dataset.startTime = Date.now();
+
+      const accumulatedMinutes = parseInt(button.dataset.duration || '0', 10);
+      const accumulatedSeconds = parseInt(button.dataset.durationSecs || '0', 10);
+
+      button.dataset.startTime = Date.now() - (accumulatedMinutes * 60 + accumulatedSeconds) * 1000;
 
       button.timerInterval = setInterval(() => {
         const startTime = parseInt(button.dataset.startTime, 10);
@@ -145,8 +171,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const elapsedMs = Date.now() - startTime;
       const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
       const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
-      button.dataset.duration = (parseInt(button.dataset.duration || '0', 10) + elapsedMinutes).toString();
-      button.dataset.durationSecs = (parseInt(button.dataset.durationSecs || '0', 10) + elapsedSeconds).toString();
+
+      const totalSeconds = parseInt(button.dataset.durationSecs || '0', 10) + elapsedSeconds;
+      const additionalMinutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
+
+      button.dataset.duration = (parseInt(button.dataset.duration || '0', 10) + elapsedMinutes + additionalMinutes).toString();
+      button.dataset.durationSecs = remainingSeconds.toString();
     }
   }
 });

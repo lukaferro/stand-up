@@ -19,10 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (response.ok) {
       const meetings = await response.json();
 
-      // Recupera le note dal localStorage
       const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
 
-      // Combina i dati dell'API con le note locali
       const combinedMeetings = meetings.map(apiMeeting => {
         const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === apiMeeting.date);
         return {
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
       });
 
-      // Aggiungi i meeting alla lista
       combinedMeetings.forEach(meeting => {
         addMeetingToList(meeting, meetingList);
       });
@@ -78,26 +75,27 @@ function addMeetingToList(meeting, meetingList) {
   const durationSeconds = meeting.durationSecs || 0;
 
   const listItem = document.createElement('li');
+  listItem.classList.add('meeting-item');
   listItem.innerHTML = `
-    <div>
+    <div class="meeting-header">
       <strong>Data:</strong> ${new Date(meeting.date).toLocaleDateString('it-IT')} 
       <strong>Durata:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}:${String(durationSeconds).padStart(2, '0')}
       <button class="expandBtn">Espandi</button>
     </div>
     <div class="details" style="display: none;">
       <p><strong>Note:</strong></p>
-      <ul>
+      <div class="notes-list">
         ${meeting.notes && meeting.notes.length > 0
-          ? meeting.notes.map(note => `
-            <li>
-              <strong>Sviluppatore ID:</strong> ${note.devId} <br>
-              <strong>Durata:</strong> ${note.durationMins} minuti <br>
-              <strong>Note:</strong> ${note.notes || 'Nessuna'}
-            </li>
+      ? meeting.notes.map(note => `
+            <div class="note-item">
+              <p><strong>Sviluppatore ID:</strong> ${note.devId}</p>
+              <p><strong>Durata:</strong> ${note.durationMins} minuti e ${note.durationSecs || 0} secondi</p>
+              <p><strong>Note:</strong> ${note.notes || 'Nessuna'}</p>
+            </div>
           `).join('')
-          : '<p>Nessuna nota disponibile.</p>'
-        }
-      </ul>
+      : '<p class="no-notes">Nessuna nota disponibile.</p>'
+    }
+      </div>
     </div>
   `;
 
