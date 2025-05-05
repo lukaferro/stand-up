@@ -95,9 +95,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const additionalMinutes = Math.floor(totalSeconds / 60);
     const remainingSeconds = totalSeconds % 60;
 
+    const totalMinutes = standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0) + additionalMinutes;
+    const totalHours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+
     const meetingData = {
       date: new Date().toISOString(),
-      durationMins: standUpsInfo.reduce((sum, info) => sum + info.durationMins, 0) + additionalMinutes,
+      durationHours: totalHours,
+      durationMins: remainingMinutes,
       durationSecs: remainingSeconds,
       standUpsInfo
     };

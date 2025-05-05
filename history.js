@@ -70,8 +70,8 @@ async function loadMeetingDetails(meetingId, detailsContainerId) {
 }
 
 function addMeetingToList(meeting, meetingList) {
-  const durationHours = Math.floor(meeting.durationMins / 60);
-  const durationMinutes = meeting.durationMins % 60;
+  const durationHours = meeting.durationHours || 0;
+  const durationMinutes = meeting.durationMins || 0;
   const durationSeconds = meeting.durationSecs || 0;
 
   const listItem = document.createElement('li');
@@ -86,15 +86,15 @@ function addMeetingToList(meeting, meetingList) {
       <p><strong>Note:</strong></p>
       <div class="notes-list">
         ${meeting.notes && meeting.notes.length > 0
-      ? meeting.notes.map(note => `
+          ? meeting.notes.map(note => `
             <div class="note-item">
               <p><strong>Sviluppatore ID:</strong> ${note.devId}</p>
               <p><strong>Durata:</strong> ${note.durationMins} minuti e ${note.durationSecs || 0} secondi</p>
               <p><strong>Note:</strong> ${note.notes || 'Nessuna'}</p>
             </div>
           `).join('')
-      : '<p class="no-notes">Nessuna nota disponibile.</p>'
-    }
+          : '<p class="no-notes">Nessuna nota disponibile.</p>'
+        }
       </div>
     </div>
   `;
