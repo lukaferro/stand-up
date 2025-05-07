@@ -13,7 +13,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const historyBtn = document.getElementById('historyBtn');
   const modal = document.getElementById('modal');
   const meetingForm = document.getElementById('meetingForm');
-  const participantsSelect = document.getElementById('participants');
+  const participantsContainer = document.getElementById('participants-container');
+  const durationInput = document.getElementById('duration');
+  const selectedParticipantsInput = document.getElementById('selected-participants');
+  const timeOptions = document.querySelectorAll('.time-option');
 
   historyBtn.addEventListener('click', () => {
     window.location.href = 'history.html';
@@ -39,8 +42,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     modal.style.display = 'none';
   });
 
-  async function populateParticipantsSelect() {
-    participantsSelect.innerHTML = '<option disabled>Caricamento partecipanti...</option>';
+  timeOptions.forEach(option => {
+    if (option.dataset.minutes === '15') {
+      option.classList.add('selected');
+    }
+
+    option.addEventListener('click', () => {
+      timeOptions.forEach(opt => opt.classList.remove('selected'));
+
+      option.classList.add('selected');
+
+      durationInput.value = option.dataset.minutes;
+    });
+  });
+
+  async function populateParticipants() {
+    participantsContainer.innerHTML = '<div class="loading">Caricamento partecipanti...</div>';
 
     try {
       const response = await fetch('https://standupparo-apis.vercel.app/api/devs', {
@@ -55,29 +72,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         devs.sort((a, b) => a.name.localeCompare(b.name));
 
-        participantsSelect.innerHTML = '';
+        participantsContainer.innerHTML = '';
+
         devs.forEach((dev) => {
-          const option = document.createElement('option');
-          option.value = dev.id;
-          option.text = dev.name;
-          participantsSelect.appendChild(option);
+          const participantItem = document.createElement('div');
+          participantItem.className = 'participant-item';
+          participantItem.dataset.id = dev.id;
+          participantItem.textContent = dev.name;
+
+          participantItem.addEventListener('click', () => {
+            participantItem.classList.toggle('selected');
+            updateSelectedParticipants();
+          });
+
+          participantsContainer.appendChild(participantItem);
         });
       } else {
-        participantsSelect.innerHTML = '<option disabled>Errore nel caricamento dei partecipanti</option>';
+        participantsContainer.innerHTML = '<div class="error">Errore nel caricamento dei partecipanti</div>';
         console.error('Errore nel recupero dei partecipanti:', response.status);
       }
     } catch (error) {
-      participantsSelect.innerHTML = '<option disabled>Errore di rete</option>';
+      participantsContainer.innerHTML = '<div class="error">Errore di rete</div>';
       console.error('Errore di rete:', error);
     }
   }
 
-  await populateParticipantsSelect();
+  function updateSelectedParticipants() {
+    const selectedItems = participantsContainer.querySelectorAll('.participant-item.selected');
+    const selectedIds = Array.from(selectedItems).map(item => item.dataset.id);
+    selectedParticipantsInput.value = selectedIds.join(',');
+  }
+
+  await populateParticipants();
 
   meetingForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    const duration = document.getElementById('duration').value;
-    const participants = Array.from(participantsSelect.selectedOptions).map((option) => option.value);
+    const duration = durationInput.value;
+    const selectedItems = participantsContainer.querySelectorAll('.participant-item.selected');
+    const participants = Array.from(selectedItems).map(item => item.dataset.id);
 
     if (participants.length === 0) {
       alert('Seleziona almeno un partecipante');

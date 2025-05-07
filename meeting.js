@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const actionsCell = document.createElement('td');
         const playPauseBtn = document.createElement('button');
         playPauseBtn.textContent = 'Play';
+        playPauseBtn.className = 'play-button';
         playPauseBtn.dataset.devId = dev.id;
         playPauseBtn.dataset.startTime = '';
         playPauseBtn.dataset.duration = '0';
@@ -100,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const timerSpan = document.createElement('span');
         timerSpan.textContent = '00:00';
-        timerSpan.style.marginLeft = '10px';
+        timerSpan.className = 'timer-span';
 
         playPauseBtn.addEventListener('click', () => togglePlayPause(playPauseBtn, timerSpan));
         actionsCell.appendChild(playPauseBtn);
@@ -190,6 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('#devTable tbody tr button').forEach(otherButton => {
       if (otherButton !== button && otherButton.textContent === 'Pausa') {
         otherButton.textContent = 'Play';
+        otherButton.classList.remove('pause-button');
+        otherButton.classList.add('play-button');
         clearInterval(otherButton.timerInterval);
 
         const startTime = parseInt(otherButton.dataset.startTime, 10);
@@ -208,6 +211,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (button.textContent === 'Play') {
       button.textContent = 'Pausa';
+      button.classList.remove('play-button');
+      button.classList.add('pause-button');
 
       const accumulatedMinutes = parseInt(button.dataset.duration || '0', 10);
       const accumulatedSeconds = parseInt(button.dataset.durationSecs || '0', 10);
@@ -223,6 +228,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 1000);
     } else {
       button.textContent = 'Play';
+      button.classList.remove('pause-button');
+      button.classList.add('play-button');
       clearInterval(button.timerInterval);
 
       const startTime = parseInt(button.dataset.startTime, 10);
