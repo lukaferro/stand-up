@@ -77,7 +77,6 @@ table td:first-child {
   color: #2c3e50;
 }
 
-/* Stile per i pulsanti nella tabella */
 table button {
   background-color: #28a745;
   color: white;
@@ -95,7 +94,6 @@ table button:hover {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Stile per i pulsanti Play/Pausa */
 .play-button {
   background-color: #28a745;
   color: white;
@@ -143,6 +141,29 @@ table button:hover {
   border: 1px solid #e0e0e0;
   min-width: 60px;
   text-align: center;
+  transition: all 0.3s ease;
+}
+
+.timer-span.warning {
+  color: #ff9800;
+  background-color: #fff3e0;
+  border-color: #ffe0b2;
+  animation: blink 1s infinite;
+}
+
+.timer-span.danger {
+  color: #f44336;
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+  animation: blinkFast 0.7s infinite;
+  font-weight: 700;
+}
+
+.timer-span.time-exceeded {
+  color: white;
+  background-color: #f44336;
+  border-color: #d32f2f;
+  animation: none;
 }
 
 table input[type="text"] {
@@ -523,12 +544,26 @@ timer {
   }
 }
 
+@keyframes blinkFast {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 body:has(#meetingDate) {
   max-width: 900px;
   background-color: #f8f9fa;
 }
 
-#meetingDate, #meetingDuration {
+#meetingDate, #meetingDuration, #maxTimePerDev {
   font-weight: 600;
   color: #2c3e50;
   display: inline-block;
@@ -538,7 +573,13 @@ body:has(#meetingDate) {
   margin-left: 5px;
 }
 
-#meetingDuration {
+#meetingDuration, #maxTimePerDev {
   font-family: monospace;
   font-size: 18px;
+}
+
+#maxTimePerDev {
+  color: #28a745;
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
 }

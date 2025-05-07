@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const endStandUpBtn = document.getElementById('endStandUpBtn');
   const meetingDateElement = document.getElementById('meetingDate');
   const meetingDurationElement = document.getElementById('meetingDuration');
+  const maxTimePerDevElement = document.getElementById('maxTimePerDev');
 
   if (!apiKey) {
     alert('API Key non trovata. Effettua nuovamente il login.');
@@ -21,8 +22,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  const maxTimePerDevInMinutes = Math.floor(parseInt(duration) / participantIds.length);
+  const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
+
   const startTime = new Date();
   meetingDateElement.textContent = startTime.toLocaleDateString('it-IT');
+  maxTimePerDevElement.textContent = `${maxTimePerDevInMinutes} min ${maxTimePerDevInSeconds % 60} sec`;
 
   const durationMs = parseInt(duration) * 60 * 1000;
   const endTime = new Date(startTime.getTime() + durationMs);
@@ -48,15 +53,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         meetingDurationElement.style.animation = 'blink 1s linear infinite';
 
         if (remainingMs <= 30000 && remainingMs > 29000) {
-          alert('Attenzione: il meeting terminerà automaticamente tra 30 secondi!');
+          alert('Attenzione: il tempo previsto per il meeting sta per scadere!');
         }
       }
     }
 
     if (remainingMs <= 0) {
-      clearInterval(meetingTimer);
-      alert('Tempo scaduto! Il meeting verrà terminato automaticamente.');
-      endStandUpBtn.click();
+      meetingDurationElement.style.animation = 'blinkFast 0.5s linear infinite';
+      meetingDurationElement.style.backgroundColor = '#ffebee';
+      meetingDurationElement.style.borderColor = '#ffcdd2';
+
+      if (remainingMs > -1000 && remainingMs <= 0) {
+        alert('Tempo previsto per il meeting scaduto! Il meeting può continuare, ma si consiglia di concludere al più presto.');
+      }
     }
   }
 
@@ -188,6 +197,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function togglePlayPause(button, timerSpan) {
+    const maxTimePerDevInMinutes = Math.floor(parseInt(duration) / participantIds.length);
+    const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
+
+    const calculateElapsedTime = (startTimeMs) => {
+      const elapsedMs = Date.now() - startTimeMs;
+      const minutes = Math.floor(elapsedMs / 1000 / 60);
+      const seconds = Math.floor((elapsedMs / 1000) % 60);
+      return { minutes, seconds, totalSeconds: minutes * 60 + seconds };
+    };
+
+    const updateTimeData = (btn, mins, secs) => {
+      const totalSeconds = parseInt(btn.dataset.durationSecs || '0', 10) + secs;
+      const additionalMinutes = Math.floor(totalSeconds / 60);
+      const remainingSeconds = totalSeconds % 60;
+
+      btn.dataset.duration = (parseInt(btn.dataset.duration || '0', 10) + mins + additionalMinutes).toString();
+      btn.dataset.durationSecs = remainingSeconds.toString();
+    };
+
     document.querySelectorAll('#devTable tbody tr button').forEach(otherButton => {
       if (otherButton !== button && otherButton.textContent === 'Pausa') {
         otherButton.textContent = 'Play';
@@ -195,17 +223,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         otherButton.classList.add('play-button');
         clearInterval(otherButton.timerInterval);
 
-        const startTime = parseInt(otherButton.dataset.startTime, 10);
-        const elapsedMs = Date.now() - startTime;
-        const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
-        const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
-
-        const totalSeconds = parseInt(otherButton.dataset.durationSecs || '0', 10) + elapsedSeconds;
-        const additionalMinutes = Math.floor(totalSeconds / 60);
-        const remainingSeconds = totalSeconds % 60;
-
-        otherButton.dataset.duration = (parseInt(otherButton.dataset.duration || '0', 10) + elapsedMinutes + additionalMinutes).toString();
-        otherButton.dataset.durationSecs = remainingSeconds.toString();
+        const startTimeMs = parseInt(otherButton.dataset.startTime, 10);
+        const { minutes, seconds } = calculateElapsedTime(startTimeMs);
+        updateTimeData(otherButton, minutes, seconds);
       }
     });
 
@@ -216,15 +236,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const accumulatedMinutes = parseInt(button.dataset.duration || '0', 10);
       const accumulatedSeconds = parseInt(button.dataset.durationSecs || '0', 10);
-
       button.dataset.startTime = Date.now() - (accumulatedMinutes * 60 + accumulatedSeconds) * 1000;
 
       button.timerInterval = setInterval(() => {
-        const startTime = parseInt(button.dataset.startTime, 10);
-        const elapsedMs = Date.now() - startTime;
-        const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
-        const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
-        timerSpan.textContent = `${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')}`;
+        const startTimeMs = parseInt(button.dataset.startTime, 10);
+        const { minutes, seconds, totalSeconds } = calculateElapsedTime(startTimeMs);
+
+        timerSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        const remainingSeconds = maxTimePerDevInSeconds - totalSeconds;
+
+        if (remainingSeconds <= 30 && remainingSeconds > 10) {
+          timerSpan.classList.add('warning');
+          timerSpan.classList.remove('danger', 'time-exceeded');
+        } else if (remainingSeconds <= 10 && remainingSeconds > 0) {
+          timerSpan.classList.add('danger');
+          timerSpan.classList.remove('warning', 'time-exceeded');
+        } else if (remainingSeconds <= 0) {
+          timerSpan.classList.add('time-exceeded');
+          timerSpan.classList.remove('warning', 'danger');
+
+          if (remainingSeconds > -1 && remainingSeconds <= 0) {
+            alert(`Tempo consigliato superato per questo partecipante!`);
+          }
+        } else {
+          timerSpan.classList.remove('warning', 'danger', 'time-exceeded');
+        }
       }, 1000);
     } else {
       button.textContent = 'Play';
@@ -232,17 +269,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       button.classList.add('play-button');
       clearInterval(button.timerInterval);
 
-      const startTime = parseInt(button.dataset.startTime, 10);
-      const elapsedMs = Date.now() - startTime;
-      const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
-      const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
+      const startTimeMs = parseInt(button.dataset.startTime, 10);
+      const { minutes, seconds } = calculateElapsedTime(startTimeMs);
+      updateTimeData(button, minutes, seconds);
 
-      const totalSeconds = parseInt(button.dataset.durationSecs || '0', 10) + elapsedSeconds;
-      const additionalMinutes = Math.floor(totalSeconds / 60);
-      const remainingSeconds = totalSeconds % 60;
-
-      button.dataset.duration = (parseInt(button.dataset.duration || '0', 10) + elapsedMinutes + additionalMinutes).toString();
-      button.dataset.durationSecs = remainingSeconds.toString();
+      timerSpan.classList.remove('warning', 'danger');
     }
   }
-});
+}
+);
