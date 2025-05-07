@@ -19,6 +19,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
         localStorage.setItem('apiKey', apiKey);
         localStorage.setItem('companyName', data.companyName);
+        
+        try {
+          const devsResponse = await fetch('https://standupparo-apis.vercel.app/api/devs', {
+            method: 'GET',
+            headers: {
+              'x-api-key': apiKey
+            }
+          });
+          
+          if (devsResponse.ok) {
+            const devs = await devsResponse.json();
+            localStorage.setItem('developers', JSON.stringify(devs));
+            console.log('Dati degli sviluppatori precaricati con successo');
+          }
+        } catch (error) {
+          console.error('Errore nel precaricare i dati degli sviluppatori:', error);
+        }
+        
+        try {
+          const meetingsResponse = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
+            method: 'GET',
+            headers: {
+              'x-api-key': apiKey
+            }
+          });
+          
+          if (meetingsResponse.ok) {
+            const meetings = await meetingsResponse.json();
+            localStorage.setItem('api_meetings', JSON.stringify(meetings));
+            console.log('Dati dei meeting precaricati con successo');
+          }
+        } catch (error) {
+          console.error('Errore nel precaricare i dati dei meeting:', error);
+        }
 
         window.location.href = 'dashboard.html';
       } else {

@@ -1,3 +1,37 @@
+async function fetchDevelopers(apiKey) {
+  try {
+    const cachedDevs = localStorage.getItem('developers');
+
+    if (cachedDevs) {
+      console.log('Utilizzati dati degli sviluppatori dal cache');
+      return JSON.parse(cachedDevs);
+    }
+
+    const response = await fetch('https://standupparo-apis.vercel.app/api/devs', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey
+      }
+    });
+
+    if (response.ok) {
+      const devs = await response.json();
+      localStorage.setItem('developers', JSON.stringify(devs));
+      return devs;
+    } else {
+      console.error('Errore nel recupero degli sviluppatori');
+      return [];
+    }
+  } catch (error) {
+    console.error('Errore di rete:', error);
+    return [];
+  }
+}
+
+function formatDuration(hours, minutes, seconds) {
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKey = localStorage.getItem('apiKey');
   const meetingList = document.getElementById('meetingList');
@@ -8,42 +42,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  const developers = await fetchDevelopers(apiKey);
+
   try {
-    const response = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey
+    let meetings = [];
+    const cachedMeetings = localStorage.getItem('api_meetings');
+
+    if (cachedMeetings) {
+      meetings = JSON.parse(cachedMeetings);
+      console.log('Utilizzati dati dei meeting dal cache');
+    } else {
+      const response = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
+        method: 'GET',
+        headers: {
+          'x-api-key': apiKey
+        }
+      });
+
+      if (response.ok) {
+        meetings = await response.json();
+        localStorage.setItem('api_meetings', JSON.stringify(meetings));
+      } else {
+        throw new Error('Errore nel recupero dei meeting');
       }
+    }
+
+    const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+
+    const combinedMeetings = meetings.map(apiMeeting => {
+      const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === apiMeeting.date);
+      return {
+        ...apiMeeting,
+        durationHours: localMeeting ? localMeeting.durationHours : apiMeeting.durationHours || 0,
+        durationMins: localMeeting ? localMeeting.durationMins : apiMeeting.durationMins || 0,
+        durationSecs: localMeeting ? localMeeting.durationSecs : apiMeeting.durationSecs || 0,
+        notes: localMeeting ? localMeeting.standUpsInfo : []
+      };
     });
 
-    if (response.ok) {
-      const meetings = await response.json();
 
-      const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
-
-      const combinedMeetings = meetings.map(apiMeeting => {
-        const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === apiMeeting.date);
-        return {
-          ...apiMeeting,
-          notes: localMeeting ? localMeeting.standUpsInfo : []
-        };
-      });
-
-      combinedMeetings.forEach(meeting => {
-        addMeetingToList(meeting, meetingList);
-      });
-    } else {
-      alert('Errore nel recupero dello storico dei meeting.');
-    }
+    combinedMeetings.forEach(meeting => {
+      addMeetingToList(meeting, meetingList, developers);
+    });
   } catch (error) {
     console.error('Errore:', error);
     alert('Errore di rete.');
   }
 });
 
-async function loadMeetingDetails(meetingId, detailsContainerId) {
-  console.log('Loading details for meeting ID:', meetingId);
+async function loadMeetingDetails(meetingId, detailsContainerId, developers = []) {
   const detailsContainer = document.getElementById(detailsContainerId);
+
+  const getDevName = (devId) => {
+    const developer = developers.find(dev => dev.id === devId);
+    return developer ? developer.name : `Sviluppatore ${devId}`;
+  };
 
   const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
   const meetingDetails = savedMeetings.find(meeting => meeting.date === meetingId);
@@ -55,8 +108,8 @@ async function loadMeetingDetails(meetingId, detailsContainerId) {
       meetingDetails.standUpsInfo.forEach(info => {
         const detailItem = document.createElement('li');
         detailItem.innerHTML = `
-          <strong>Sviluppatore ID:</strong> ${info.devId} <br>
-          <strong>Durata:</strong> ${info.durationMins} minuti <br>
+          <strong>Sviluppatore:</strong> ${getDevName(info.devId)} <br>
+          <strong>Durata:</strong> ${info.durationMins} minuti e ${typeof info.durationSecs !== 'undefined' ? info.durationSecs : 0} secondi <br>
           <strong>Note:</strong> ${info.notes || 'Nessuna'}
         `;
         detailsContainer.appendChild(detailItem);
@@ -69,37 +122,55 @@ async function loadMeetingDetails(meetingId, detailsContainerId) {
   }
 }
 
-function addMeetingToList(meeting, meetingList) {
+function addMeetingToList(meeting, meetingList, developers = []) {
   const durationHours = meeting.durationHours || 0;
   const durationMinutes = meeting.durationMins || 0;
   const durationSeconds = meeting.durationSecs || 0;
-  
+
   const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
   const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === meeting.date);
   const plannedDuration = localMeeting && localMeeting.plannedDurationMins ? localMeeting.plannedDurationMins : '?';
 
+  const getDevName = (devId) => {
+    const developer = developers.find(dev => dev.id === devId);
+    return developer ? developer.name : `Sviluppatore ${devId}`;
+  };
+
+
   const listItem = document.createElement('li');
   listItem.classList.add('meeting-item');
+
+  const meetingDate = new Date(meeting.date).toLocaleDateString('it-IT');
+
+  const effectiveDuration = formatDuration(durationHours, durationMinutes, durationSeconds);
+
+  const currentNotesHtml = meeting.notes && meeting.notes.length > 0
+    ? meeting.notes.map(note => `
+      <div class="note-item">
+        <p><strong>Sviluppatore:</strong> ${getDevName(note.devId)}</p>
+        <p><strong>Durata:</strong> ${note.durationMins} minuti e ${typeof note.durationSecs !== 'undefined' ? note.durationSecs : 0} secondi</p>
+        <p><strong>Note:</strong> ${note.notes || 'Nessuna'}</p>
+      </div>
+    `).join('')
+    : '<p class="no-notes">Nessuna nota disponibile.</p>';
+
+  const previousNotesHtml = '';
+
   listItem.innerHTML = `
     <div class="meeting-header">
-      <strong>Data:</strong> ${new Date(meeting.date).toLocaleDateString('it-IT')} 
+      <strong>Data:</strong> ${meetingDate} 
       <strong>Durata pianificata:</strong> ${plannedDuration} min
-      <strong>Durata effettiva:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}:${String(durationSeconds).padStart(2, '0')}
+      <strong>Durata effettiva:</strong> ${effectiveDuration}
       <button class="expandBtn">Espandi</button>
     </div>
     <div class="details" style="display: none;">
-      <p><strong>Note:</strong></p>
-      <div class="notes-list">
-        ${meeting.notes && meeting.notes.length > 0
-          ? meeting.notes.map(note => `
-            <div class="note-item">
-              <p><strong>Sviluppatore ID:</strong> ${note.devId}</p>
-              <p><strong>Durata:</strong> ${note.durationMins} minuti e ${note.durationSecs || 0} secondi</p>
-              <p><strong>Note:</strong> ${note.notes || 'Nessuna'}</p>
-            </div>
-          `).join('')
-          : '<p class="no-notes">Nessuna nota disponibile.</p>'
-        }
+      <div class="notes-container">
+        <div class="current-notes">
+          <h3>Note del meeting</h3>
+          <div class="notes-list">
+            ${currentNotesHtml}
+          </div>
+        </div>
       </div>
     </div>
   `;

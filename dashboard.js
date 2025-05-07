@@ -1,3 +1,35 @@
+async function updateCachedData(apiKey) {
+  try {
+    const devsResponse = await fetch('https://standupparo-apis.vercel.app/api/devs', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey
+      }
+    });
+
+    if (devsResponse.ok) {
+      const devs = await devsResponse.json();
+      localStorage.setItem('developers', JSON.stringify(devs));
+      console.log('Dati degli sviluppatori aggiornati in background');
+    }
+
+    const meetingsResponse = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey
+      }
+    });
+
+    if (meetingsResponse.ok) {
+      const meetings = await meetingsResponse.json();
+      localStorage.setItem('api_meetings', JSON.stringify(meetings));
+      console.log('Dati dei meeting aggiornati in background');
+    }
+  } catch (error) {
+    console.error('Errore nell\'aggiornamento dei dati in background:', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const companyName = localStorage.getItem('companyName');
   const apiKey = localStorage.getItem('apiKey');
@@ -7,10 +39,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  updateCachedData(apiKey);
+
   document.getElementById('welcomeMsg').innerText = `Azienda: ${companyName}`;
 
   const startBtn = document.getElementById('startBtn');
   const historyBtn = document.getElementById('historyBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
   const modal = document.getElementById('modal');
   const meetingForm = document.getElementById('meetingForm');
   const participantsContainer = document.getElementById('participants-container');
@@ -20,6 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   historyBtn.addEventListener('click', () => {
     window.location.href = 'history.html';
+  });
+  
+  logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('apiKey');
+    localStorage.removeItem('companyName');
+    window.location.href = 'index.html';
   });
 
   startBtn.addEventListener('click', (e) => {
@@ -32,8 +73,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     closeModalBtn = document.createElement('button');
     closeModalBtn.id = 'closeModalBtn';
     closeModalBtn.type = 'button';
-    closeModalBtn.textContent = 'Chiudi';
+    closeModalBtn.textContent = '×';
     closeModalBtn.className = 'close-modal-btn';
+    closeModalBtn.title = 'Chiudi';
     const modalContent = document.querySelector('.modal-content');
     modalContent.insertBefore(closeModalBtn, modalContent.firstChild);
   }
@@ -60,37 +102,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     participantsContainer.innerHTML = '<div class="loading">Caricamento partecipanti...</div>';
 
     try {
-      const response = await fetch('https://standupparo-apis.vercel.app/api/devs', {
-        method: 'GET',
-        headers: {
-          'x-api-key': apiKey
-        }
-      });
+      let devs = [];
+      const cachedDevs = localStorage.getItem('developers');
 
-      if (response.ok) {
-        const devs = await response.json();
-
-        devs.sort((a, b) => a.name.localeCompare(b.name));
-
-        participantsContainer.innerHTML = '';
-
-        devs.forEach((dev) => {
-          const participantItem = document.createElement('div');
-          participantItem.className = 'participant-item';
-          participantItem.dataset.id = dev.id;
-          participantItem.textContent = dev.name;
-
-          participantItem.addEventListener('click', () => {
-            participantItem.classList.toggle('selected');
-            updateSelectedParticipants();
-          });
-
-          participantsContainer.appendChild(participantItem);
-        });
+      if (cachedDevs) {
+        devs = JSON.parse(cachedDevs);
+        console.log('Utilizzati dati degli sviluppatori dal cache');
       } else {
-        participantsContainer.innerHTML = '<div class="error">Errore nel caricamento dei partecipanti</div>';
-        console.error('Errore nel recupero dei partecipanti:', response.status);
+        const response = await fetch('https://standupparo-apis.vercel.app/api/devs', {
+          method: 'GET',
+          headers: {
+            'x-api-key': apiKey
+          }
+        });
+
+        if (response.ok) {
+          devs = await response.json();
+          localStorage.setItem('developers', JSON.stringify(devs));
+        } else {
+          throw new Error('Errore nel recupero degli sviluppatori');
+        }
       }
+
+      devs.sort((a, b) => a.name.localeCompare(b.name));
+
+      participantsContainer.innerHTML = '';
+
+      devs.forEach((dev) => {
+        const participantItem = document.createElement('div');
+        participantItem.className = 'participant-item';
+        participantItem.dataset.id = dev.id;
+        participantItem.textContent = dev.name;
+
+        participantItem.addEventListener('click', () => {
+          participantItem.classList.toggle('selected');
+          updateSelectedParticipants();
+        });
+
+        participantsContainer.appendChild(participantItem);
+      });
     } catch (error) {
       participantsContainer.innerHTML = '<div class="error">Errore di rete</div>';
       console.error('Errore di rete:', error);
