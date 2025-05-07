@@ -16,6 +16,20 @@
 
   <button id="startBtn">Inizia Stand Up Meeting</button>
   <button id="historyBtn">Storico</button>
+
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h2>Seleziona il tempo e i partecipanti</h2>
+      <form id="meetingForm">
+        <label for="duration">Durata massima del meeting (minuti):</label>
+        <input type="number" id="duration" name="duration" min="1" value="15" required>
+        <label for="participants">Seleziona i partecipanti (tieni premuto CTRL per selezionare più persone):</label>
+        <select id="participants" name="participants" multiple size="8">
+        </select>
+        <button type="submit">Avvia meeting</button>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>

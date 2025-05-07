@@ -11,18 +11,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const duration = urlParams.get('duration');
+  const participantIds = urlParams.get('participants') ? urlParams.get('participants').split(',') : [];
+
+  if (!duration || participantIds.length === 0) {
+    alert('Parametri mancanti. Torna alla dashboard.');
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   const startTime = new Date();
   meetingDateElement.textContent = startTime.toLocaleDateString('it-IT');
+
+  const durationMs = parseInt(duration) * 60 * 1000;
+  const endTime = new Date(startTime.getTime() + durationMs);
+  let meetingTimer;
 
   function updateDuration() {
     const now = new Date();
     const elapsedMs = now - startTime;
     const elapsedMinutes = Math.floor(elapsedMs / 1000 / 60);
     const elapsedSeconds = Math.floor((elapsedMs / 1000) % 60);
-    meetingDurationElement.textContent = `${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')}`;
+    const remainingMs = Math.max(0, endTime - now);
+    const remainingMinutes = Math.floor(remainingMs / 1000 / 60);
+    const remainingSeconds = Math.floor((remainingMs / 1000) % 60);
+
+    const remainingText = `${String(remainingMinutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    meetingDurationElement.textContent = `${String(elapsedMinutes).padStart(2, '0')}:${String(elapsedSeconds).padStart(2, '0')} (Rimanente: ${remainingText})`;
+
+    if (remainingMs <= 60000) {
+      meetingDurationElement.style.color = 'red';
+      meetingDurationElement.style.fontWeight = 'bold';
+
+      if (remainingMs <= 30000) {
+        meetingDurationElement.style.animation = 'blink 1s linear infinite';
+
+        if (remainingMs <= 30000 && remainingMs > 29000) {
+          alert('Attenzione: il meeting terminerà automaticamente tra 30 secondi!');
+        }
+      }
+    }
+
+    if (remainingMs <= 0) {
+      clearInterval(meetingTimer);
+      alert('Tempo scaduto! Il meeting verrà terminato automaticamente.');
+      endStandUpBtn.click();
+    }
   }
 
-  setInterval(updateDuration, 1000);
+  meetingTimer = setInterval(updateDuration, 1000);
 
   try {
     const response = await fetch('https://standupparo-apis.vercel.app/api/devs', {
@@ -33,8 +71,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (response.ok) {
-      const devs = await response.json();
-      devs.forEach(dev => {
+      const allDevs = await response.json();
+
+      const selectedDevs = allDevs.filter(dev => participantIds.includes(dev.id.toString()));
+
+      selectedDevs.sort((a, b) => a.name.localeCompare(b.name));
+
+      if (selectedDevs.length === 0) {
+        alert('Nessun partecipante selezionato trovato.');
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      selectedDevs.forEach(dev => {
         const row = document.createElement('tr');
 
         const devNameCell = document.createElement('td');
@@ -47,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         playPauseBtn.dataset.devId = dev.id;
         playPauseBtn.dataset.startTime = '';
         playPauseBtn.dataset.duration = '0';
+        playPauseBtn.dataset.durationSecs = '0';
 
         const timerSpan = document.createElement('span');
         timerSpan.textContent = '00:00';
@@ -69,13 +119,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     } else {
       alert('Errore nel recupero degli sviluppatori.');
+      window.location.href = 'dashboard.html';
     }
   } catch (error) {
     console.error('Errore:', error);
     alert('Errore di rete.');
+    window.location.href = 'dashboard.html';
   }
 
   endStandUpBtn.addEventListener('click', async () => {
+    clearInterval(meetingTimer);
     const standUpsInfo = [];
     document.querySelectorAll('#devTable tbody tr').forEach(row => {
       const devId = row.querySelector('button').dataset.devId;
