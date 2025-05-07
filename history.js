@@ -73,13 +73,18 @@ function addMeetingToList(meeting, meetingList) {
   const durationHours = meeting.durationHours || 0;
   const durationMinutes = meeting.durationMins || 0;
   const durationSeconds = meeting.durationSecs || 0;
+  
+  const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+  const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === meeting.date);
+  const plannedDuration = localMeeting && localMeeting.plannedDurationMins ? localMeeting.plannedDurationMins : '?';
 
   const listItem = document.createElement('li');
   listItem.classList.add('meeting-item');
   listItem.innerHTML = `
     <div class="meeting-header">
       <strong>Data:</strong> ${new Date(meeting.date).toLocaleDateString('it-IT')} 
-      <strong>Durata:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}:${String(durationSeconds).padStart(2, '0')}
+      <strong>Durata pianificata:</strong> ${plannedDuration} min
+      <strong>Durata effettiva:</strong> ${String(durationHours).padStart(2, '0')}:${String(durationMinutes).padStart(2, '0')}:${String(durationSeconds).padStart(2, '0')}
       <button class="expandBtn">Espandi</button>
     </div>
     <div class="details" style="display: none;">

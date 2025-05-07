@@ -22,12 +22,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  const maxTimePerDevInMinutes = Math.floor(parseInt(duration) / participantIds.length);
+  const maxTimePerDevInMinutes = parseInt(duration) / participantIds.length;
   const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
-
+  const maxTimePerDevMinutesDisplay = Math.floor(maxTimePerDevInMinutes);
+  const maxTimePerDevSecondsDisplay = Math.round((maxTimePerDevInMinutes - maxTimePerDevMinutesDisplay) * 60);
+  
   const startTime = new Date();
   meetingDateElement.textContent = startTime.toLocaleDateString('it-IT');
-  maxTimePerDevElement.textContent = `${maxTimePerDevInMinutes} min ${maxTimePerDevInSeconds % 60} sec`;
+  maxTimePerDevElement.textContent = `${maxTimePerDevMinutesDisplay} min ${maxTimePerDevSecondsDisplay} sec`;
 
   const durationMs = parseInt(duration) * 60 * 1000;
   const endTime = new Date(startTime.getTime() + durationMs);
@@ -52,9 +54,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (remainingMs <= 30000) {
         meetingDurationElement.style.animation = 'blink 1s linear infinite';
 
-        if (remainingMs <= 30000 && remainingMs > 29000) {
-          alert('Attenzione: il tempo previsto per il meeting sta per scadere!');
-        }
       }
     }
 
@@ -62,10 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       meetingDurationElement.style.animation = 'blinkFast 0.5s linear infinite';
       meetingDurationElement.style.backgroundColor = '#ffebee';
       meetingDurationElement.style.borderColor = '#ffcdd2';
-
-      if (remainingMs > -1000 && remainingMs <= 0) {
-        alert('Tempo previsto per il meeting scaduto! Il meeting può continuare, ma si consiglia di concludere al più presto.');
-      }
     }
   }
 
@@ -167,6 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       durationHours: totalHours,
       durationMins: remainingMinutes,
       durationSecs: remainingSeconds,
+      plannedDurationMins: parseInt(duration),
       standUpsInfo
     };
 
@@ -197,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function togglePlayPause(button, timerSpan) {
-    const maxTimePerDevInMinutes = Math.floor(parseInt(duration) / participantIds.length);
+    const maxTimePerDevInMinutes = parseInt(duration) / participantIds.length;
     const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
 
     const calculateElapsedTime = (startTimeMs) => {
@@ -256,9 +252,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           timerSpan.classList.add('time-exceeded');
           timerSpan.classList.remove('warning', 'danger');
 
-          if (remainingSeconds > -1 && remainingSeconds <= 0) {
-            alert(`Tempo consigliato superato per questo partecipante!`);
-          }
         } else {
           timerSpan.classList.remove('warning', 'danger', 'time-exceeded');
         }
