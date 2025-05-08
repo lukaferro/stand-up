@@ -163,144 +163,149 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'dashboard.html';
   }
 
-endStandUpBtn.addEventListener('click', async () => {
-  clearInterval(meetingTimer);
-  const standUpsInfo = [];
-  document.querySelectorAll('#devTable tbody tr').forEach(row => {
-    const devId = row.querySelector('button').dataset.devId;
-    const notes = row.querySelector('input').value;
-    const durationMins = parseInt(row.querySelector('button').dataset.duration || '0', 10);
-    const durationSecs = parseInt(row.querySelector('button').dataset.durationSecs || '0', 10);
+  endStandUpBtn.addEventListener('click', async () => {
+    clearInterval(meetingTimer);
+    const standUpsInfo = [];
+    document.querySelectorAll('#devTable tbody tr').forEach(row => {
+      const devId = row.querySelector('button').dataset.devId;
+      const notes = row.querySelector('input').value;
+      const durationMins = parseInt(row.querySelector('button').dataset.duration || '0', 10);
+      const durationSecs = parseInt(row.querySelector('button').dataset.durationSecs || '0', 10);
 
-    standUpsInfo.push({
-      devId: parseInt(devId, 10),
-      durationMins,
-      durationSecs,
-      notes
+      standUpsInfo.push({
+        devId: parseInt(devId, 10),
+        durationMins,
+        durationSecs,
+        notes
+      });
     });
+
+    const now = new Date();
+    const elapsedMs = now - startTime;
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+    const totalHours = Math.floor(elapsedSeconds / 3600);
+    const remainingMinutes = Math.floor((elapsedSeconds % 3600) / 60);
+    const remainingSeconds = elapsedSeconds % 60;
+
+    console.log(`Durata effettiva del meeting: ${totalHours}h ${remainingMinutes}m ${remainingSeconds}s`);
+
+    const meetingData = {
+      date: new Date().toISOString(),
+      durationHours: totalHours,
+      durationMins: remainingMinutes,
+      durationSecs: remainingSeconds,
+      plannedDurationMins: parseInt(duration),
+      standUpsInfo
+    };
+
+    const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+    savedMeetings.push(meetingData);
+    localStorage.setItem('meetings', JSON.stringify(savedMeetings));
+
+    try {
+      const response = await fetch('https://standupparo-apis.vercel.app/api/stand-up', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify(meetingData)
+      });
+
+      if (response.ok) {
+        alert('Stand Up Meeting salvato con successo.');
+        window.location.href = 'history.html';
+      } else {
+        alert('Errore durante la terminazione dello Stand Up Meeting.');
+      }
+    } catch (error) {
+      console.error('Errore:', error);
+      alert('Errore di rete.');
+    }
   });
 
-  const now = new Date();
-  const elapsedMs = now - startTime;
-  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+  function togglePlayPause(button, timerSpan) {
+    const maxTimePerDevInMinutes = parseInt(duration) / participantIds.length;
+    const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
 
-  const totalHours = Math.floor(elapsedSeconds / 3600);
-  const remainingMinutes = Math.floor((elapsedSeconds % 3600) / 60);
-  const remainingSeconds = elapsedSeconds % 60;
+    const calculateElapsedTime = (startTimeMs) => {
+      const elapsedMs = Date.now() - startTimeMs;
+      const minutes = Math.floor(elapsedMs / 1000 / 60);
+      const seconds = Math.floor((elapsedMs / 1000) % 60);
+      return { minutes, seconds, totalSeconds: minutes * 60 + seconds };
+    };
 
-  console.log(`Durata effettiva del meeting: ${totalHours}h ${remainingMinutes}m ${remainingSeconds}s`);
 
-  const meetingData = {
-    date: new Date().toISOString(),
-    durationHours: totalHours,
-    durationMins: remainingMinutes,
-    durationSecs: remainingSeconds,
-    plannedDurationMins: parseInt(duration),
-    standUpsInfo
-  };
+    document.querySelectorAll('#devTable tbody tr button').forEach(otherButton => {
+      if (otherButton !== button && otherButton.textContent === 'Pausa') {
+        otherButton.textContent = 'Play';
+        otherButton.classList.remove('pause-button');
+        otherButton.classList.add('play-button');
+        clearInterval(otherButton.timerInterval);
 
-  const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
-  savedMeetings.push(meetingData);
-  localStorage.setItem('meetings', JSON.stringify(savedMeetings));
+        const startTimeMs = parseInt(otherButton.dataset.startTime, 10);
+        const { minutes, seconds } = calculateElapsedTime(startTimeMs);
 
-  try {
-    const response = await fetch('https://standupparo-apis.vercel.app/api/stand-up', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey
-      },
-      body: JSON.stringify(meetingData)
+        otherButton.dataset.duration = minutes.toString();
+        otherButton.dataset.durationSecs = seconds.toString();
+
+        const otherTimerSpan = otherButton.nextElementSibling;
+        if (otherTimerSpan && otherTimerSpan.classList.contains('timer-span')) {
+          otherTimerSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+      }
     });
 
-    if (response.ok) {
-      alert('Stand Up Meeting salvato con successo.');
-      window.location.href = 'history.html';
+    if (button.textContent === 'Play') {
+      button.textContent = 'Pausa';
+      button.classList.remove('play-button');
+      button.classList.add('pause-button');
+
+      const accumulatedMinutes = parseInt(button.dataset.duration || '0', 10);
+      const accumulatedSeconds = parseInt(button.dataset.durationSecs || '0', 10);
+      const totalAccumulatedSeconds = accumulatedMinutes * 60 + accumulatedSeconds;
+
+      button.dataset.startTime = (Date.now() - totalAccumulatedSeconds * 1000).toString();
+
+      button.timerInterval = setInterval(() => {
+        const startTimeMs = parseInt(button.dataset.startTime, 10);
+        const { minutes, seconds, totalSeconds } = calculateElapsedTime(startTimeMs);
+
+        timerSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        const remainingSeconds = maxTimePerDevInSeconds - totalSeconds;
+
+        if (remainingSeconds <= 30 && remainingSeconds > 10) {
+          timerSpan.classList.add('warning');
+          timerSpan.classList.remove('danger', 'time-exceeded');
+        } else if (remainingSeconds <= 10 && remainingSeconds > 0) {
+          timerSpan.classList.add('danger');
+          timerSpan.classList.remove('warning', 'time-exceeded');
+        } else if (remainingSeconds <= 0) {
+          timerSpan.classList.add('time-exceeded');
+          timerSpan.classList.remove('warning', 'danger');
+
+        } else {
+          timerSpan.classList.remove('warning', 'danger', 'time-exceeded');
+        }
+      }, 1000);
     } else {
-      alert('Errore durante la terminazione dello Stand Up Meeting.');
-    }
-  } catch (error) {
-    console.error('Errore:', error);
-    alert('Errore di rete.');
-  }
-});
+      button.textContent = 'Play';
+      button.classList.remove('pause-button');
+      button.classList.add('play-button');
+      clearInterval(button.timerInterval);
 
-function togglePlayPause(button, timerSpan) {
-  const maxTimePerDevInMinutes = parseInt(duration) / participantIds.length;
-  const maxTimePerDevInSeconds = maxTimePerDevInMinutes * 60;
-
-  const calculateElapsedTime = (startTimeMs) => {
-    const elapsedMs = Date.now() - startTimeMs;
-    const minutes = Math.floor(elapsedMs / 1000 / 60);
-    const seconds = Math.floor((elapsedMs / 1000) % 60);
-    return { minutes, seconds, totalSeconds: minutes * 60 + seconds };
-  };
-
-  const updateTimeData = (btn, mins, secs) => {
-    const totalSeconds = parseInt(btn.dataset.durationSecs || '0', 10) + secs;
-    const additionalMinutes = Math.floor(totalSeconds / 60);
-    const remainingSeconds = totalSeconds % 60;
-
-    btn.dataset.duration = (parseInt(btn.dataset.duration || '0', 10) + mins + additionalMinutes).toString();
-    btn.dataset.durationSecs = remainingSeconds.toString();
-  };
-
-  document.querySelectorAll('#devTable tbody tr button').forEach(otherButton => {
-    if (otherButton !== button && otherButton.textContent === 'Pausa') {
-      otherButton.textContent = 'Play';
-      otherButton.classList.remove('pause-button');
-      otherButton.classList.add('play-button');
-      clearInterval(otherButton.timerInterval);
-
-      const startTimeMs = parseInt(otherButton.dataset.startTime, 10);
-      const { minutes, seconds } = calculateElapsedTime(startTimeMs);
-      updateTimeData(otherButton, minutes, seconds);
-    }
-  });
-
-  if (button.textContent === 'Play') {
-    button.textContent = 'Pausa';
-    button.classList.remove('play-button');
-    button.classList.add('pause-button');
-
-    const accumulatedMinutes = parseInt(button.dataset.duration || '0', 10);
-    const accumulatedSeconds = parseInt(button.dataset.durationSecs || '0', 10);
-    button.dataset.startTime = Date.now() - (accumulatedMinutes * 60 + accumulatedSeconds) * 1000;
-
-    button.timerInterval = setInterval(() => {
       const startTimeMs = parseInt(button.dataset.startTime, 10);
-      const { minutes, seconds, totalSeconds } = calculateElapsedTime(startTimeMs);
+      const { minutes, seconds } = calculateElapsedTime(startTimeMs);
+
+      button.dataset.duration = minutes.toString();
+      button.dataset.durationSecs = seconds.toString();
+
+      timerSpan.classList.remove('warning', 'danger');
 
       timerSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-      const remainingSeconds = maxTimePerDevInSeconds - totalSeconds;
-
-      if (remainingSeconds <= 30 && remainingSeconds > 10) {
-        timerSpan.classList.add('warning');
-        timerSpan.classList.remove('danger', 'time-exceeded');
-      } else if (remainingSeconds <= 10 && remainingSeconds > 0) {
-        timerSpan.classList.add('danger');
-        timerSpan.classList.remove('warning', 'time-exceeded');
-      } else if (remainingSeconds <= 0) {
-        timerSpan.classList.add('time-exceeded');
-        timerSpan.classList.remove('warning', 'danger');
-
-      } else {
-        timerSpan.classList.remove('warning', 'danger', 'time-exceeded');
-      }
-    }, 1000);
-  } else {
-    button.textContent = 'Play';
-    button.classList.remove('pause-button');
-    button.classList.add('play-button');
-    clearInterval(button.timerInterval);
-
-    const startTimeMs = parseInt(button.dataset.startTime, 10);
-    const { minutes, seconds } = calculateElapsedTime(startTimeMs);
-    updateTimeData(button, minutes, seconds);
-
-    timerSpan.classList.remove('warning', 'danger');
+    }
   }
-}
 }
 );

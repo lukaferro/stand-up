@@ -32,17 +32,23 @@ function formatDuration(hours, minutes, seconds) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+let currentPage = 1;
+const meetingsPerPage = 7;
+let allMeetings = [];
+let totalPages = 0;
+let developers = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKey = localStorage.getItem('apiKey');
   const meetingList = document.getElementById('meetingList');
-
+  
   if (!apiKey) {
     alert('API Key non trovata. Effettua nuovamente il login.');
     window.location.href = 'index.html';
     return;
   }
 
-  const developers = await fetchDevelopers(apiKey);
+  developers = await fetchDevelopers(apiKey);
 
   try {
     let meetings = [];
@@ -69,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
 
-    const combinedMeetings = meetings.map(apiMeeting => {
+    allMeetings = meetings.map(apiMeeting => {
       const localMeeting = savedMeetings.find(savedMeeting => savedMeeting.date === apiMeeting.date);
       return {
         ...apiMeeting,
@@ -80,15 +86,46 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
     });
 
-
-    combinedMeetings.forEach(meeting => {
-      addMeetingToList(meeting, meetingList, developers);
-    });
+    allMeetings.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    totalPages = Math.ceil(allMeetings.length / meetingsPerPage);
+    
+    displayMeetings(currentPage);
+    
+    updatePaginationControls();
+    
   } catch (error) {
     console.error('Errore:', error);
     alert('Errore di rete.');
   }
 });
+
+function displayMeetings(page) {
+  const meetingList = document.getElementById('meetingList');
+  meetingList.innerHTML = '';
+  
+  const startIndex = (page - 1) * meetingsPerPage;
+  const endIndex = Math.min(startIndex + meetingsPerPage, allMeetings.length);
+  
+  for (let i = startIndex; i < endIndex; i++) {
+    addMeetingToList(allMeetings[i], meetingList, developers);
+  }
+  
+  currentPage = page;
+  
+  updatePaginationControls();
+}
+
+function updatePaginationControls() {
+  const paginationInfo = document.getElementById('paginationInfo');
+  const prevButton = document.getElementById('prevPage');
+  const nextButton = document.getElementById('nextPage');
+  
+  paginationInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
+  
+  prevButton.disabled = currentPage === 1;
+  nextButton.disabled = currentPage === totalPages;
+}
 
 async function loadMeetingDetails(meetingId, detailsContainerId, developers = []) {
   const detailsContainer = document.getElementById(detailsContainerId);
@@ -119,6 +156,18 @@ async function loadMeetingDetails(meetingId, detailsContainerId, developers = []
     }
   } else {
     detailsContainer.innerHTML = '<p>Dettagli non trovati per questo meeting.</p>';
+  }
+}
+
+function goToPreviousPage() {
+  if (currentPage > 1) {
+    displayMeetings(currentPage - 1);
+  }
+}
+
+function goToNextPage() {
+  if (currentPage < totalPages) {
+    displayMeetings(currentPage + 1);
   }
 }
 

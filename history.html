@@ -10,7 +10,19 @@
 
 <body>
   <h2>Storico Meeting</h2>
+  
   <ul id="meetingList"></ul>
+  
+  <div class="pagination-controls">
+    <button id="prevPage" onclick="goToPreviousPage()" disabled>
+      <span class="arrow-icon">&#8592;</span>
+    </button>
+    <span id="paginationInfo">Pagina 1 di 1</span>
+    <button id="nextPage" onclick="goToNextPage()" disabled>
+      <span class="arrow-icon">&#8594;</span>
+    </button>
+  </div>
+  
   <button class="dashboard-btn" onclick="window.location.href='dashboard.html'">Torna alla Dashboard</button>
 </body>
 
