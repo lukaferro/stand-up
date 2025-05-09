@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   historyBtn.addEventListener('click', () => {
     window.location.href = 'history.html';
   });
-  
+
   logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('apiKey');
     localStorage.removeItem('companyName');

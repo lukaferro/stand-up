@@ -88,7 +88,7 @@ table th::after {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
 }
 
 table th:first-child {
@@ -150,7 +150,8 @@ table button:hover {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.play-button, .pause-button {
+.play-button,
+.pause-button {
   width: 60px;
   min-width: 60px;
   color: white;
@@ -281,7 +282,8 @@ button:hover {
   text-align: center;
 }
 
-#startBtn, #historyBtn {
+#startBtn,
+#historyBtn {
   padding: 12px 24px;
   color: white;
   border: none;
@@ -499,6 +501,7 @@ timer {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -561,7 +564,7 @@ timer {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
 }
@@ -569,7 +572,7 @@ timer {
 .time-option:hover {
   background-color: #e9ecef;
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 }
 
 .time-option.selected {
@@ -585,7 +588,7 @@ timer {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
   border-radius: 50%;
 }
 
@@ -614,13 +617,13 @@ timer {
   transition: all 0.2s ease;
   font-size: 14px;
   margin: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .participant-item:hover {
   background-color: #e9ecef;
   transform: translateY(-2px);
-  box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
 }
 
 .participant-item.selected {
@@ -726,7 +729,9 @@ body:has(#meetingDate) {
   background-color: #f8f9fa;
 }
 
-#meetingDate, #meetingDuration, #maxTimePerDev {
+#meetingDate,
+#meetingDuration,
+#maxTimePerDev {
   font-weight: 600;
   color: #2c3e50;
   display: inline-block;
@@ -736,7 +741,8 @@ body:has(#meetingDate) {
   margin-left: 5px;
 }
 
-#meetingDuration, #maxTimePerDev {
+#meetingDuration,
+#maxTimePerDev {
   font-family: monospace;
   font-size: 18px;
 }

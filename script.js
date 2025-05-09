@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         localStorage.setItem('apiKey', apiKey);
         localStorage.setItem('companyName', data.companyName);
-        
+
         try {
           const devsResponse = await fetch('https://standupparo-apis.vercel.app/api/devs', {
             method: 'GET',
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
               'x-api-key': apiKey
             }
           });
-          
+
           if (devsResponse.ok) {
             const devs = await devsResponse.json();
             localStorage.setItem('developers', JSON.stringify(devs));
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
           console.error('Errore nel precaricare i dati degli sviluppatori:', error);
         }
-        
+
         try {
           const meetingsResponse = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
             method: 'GET',
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
               'x-api-key': apiKey
             }
           });
-          
+
           if (meetingsResponse.ok) {
             const meetings = await meetingsResponse.json();
             localStorage.setItem('api_meetings', JSON.stringify(meetings));

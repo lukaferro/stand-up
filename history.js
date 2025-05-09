@@ -41,7 +41,7 @@ let developers = [];
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKey = localStorage.getItem('apiKey');
   const meetingList = document.getElementById('meetingList');
-  
+
   if (!apiKey) {
     alert('API Key non trovata. Effettua nuovamente il login.');
     window.location.href = 'index.html';
@@ -87,13 +87,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     allMeetings.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
+
     totalPages = Math.ceil(allMeetings.length / meetingsPerPage);
-    
+
     displayMeetings(currentPage);
-    
+
     updatePaginationControls();
-    
+
   } catch (error) {
     console.error('Errore:', error);
     alert('Errore di rete.');
@@ -103,16 +103,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 function displayMeetings(page) {
   const meetingList = document.getElementById('meetingList');
   meetingList.innerHTML = '';
-  
+
   const startIndex = (page - 1) * meetingsPerPage;
   const endIndex = Math.min(startIndex + meetingsPerPage, allMeetings.length);
-  
+
   for (let i = startIndex; i < endIndex; i++) {
     addMeetingToList(allMeetings[i], meetingList, developers);
   }
-  
+
   currentPage = page;
-  
+
   updatePaginationControls();
 }
 
@@ -120,9 +120,9 @@ function updatePaginationControls() {
   const paginationInfo = document.getElementById('paginationInfo');
   const prevButton = document.getElementById('prevPage');
   const nextButton = document.getElementById('nextPage');
-  
+
   paginationInfo.textContent = `Pagina ${currentPage} di ${totalPages}`;
-  
+
   prevButton.disabled = currentPage === 1;
   nextButton.disabled = currentPage === totalPages;
 }
