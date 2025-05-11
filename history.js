@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         durationHours: localMeeting ? localMeeting.durationHours : apiMeeting.durationHours || 0,
         durationMins: localMeeting ? localMeeting.durationMins : apiMeeting.durationMins || 0,
         durationSecs: localMeeting ? localMeeting.durationSecs : apiMeeting.durationSecs || 0,
+        plannedDurationMins: localMeeting ? localMeeting.plannedDurationMins : apiMeeting.plannedDurationMins || 0,
         notes: localMeeting ? localMeeting.standUpsInfo : []
       };
     });
@@ -197,7 +198,7 @@ function addMeetingToList(meeting, meetingList, developers = []) {
     ? meeting.notes.map(note => `
       <div class="note-item">
         <p><strong>Sviluppatore:</strong> ${getDevName(note.devId)}</p>
-        <p><strong>Durata:</strong> ${note.durationMins} minuti e ${typeof note.durationSecs !== 'undefined' ? note.durationSecs : 0} secondi</p>
+        <p><strong>Durata:</strong> ${note.durationMins || 0} minuti e ${typeof note.durationSecs !== 'undefined' ? note.durationSecs : 0} secondi</p>
         <p><strong>Note:</strong> ${note.notes || 'Nessuna'}</p>
       </div>
     `).join('')

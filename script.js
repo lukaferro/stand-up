@@ -48,6 +48,21 @@ document.addEventListener('DOMContentLoaded', function () {
           if (meetingsResponse.ok) {
             const meetings = await meetingsResponse.json();
             localStorage.setItem('api_meetings', JSON.stringify(meetings));
+
+            const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+
+            meetings.forEach(apiMeeting => {
+              const existingMeeting = savedMeetings.find(m => m.date === apiMeeting.date);
+              if (!existingMeeting) {
+                savedMeetings.push({
+                  ...apiMeeting,
+                  plannedDurationMins: apiMeeting.plannedDurationMins || 0,
+                  standUpsInfo: apiMeeting.notes || []
+                });
+              }
+            });
+
+            localStorage.setItem('meetings', JSON.stringify(savedMeetings));
             console.log('Dati dei meeting precaricati con successo');
           }
         } catch (error) {

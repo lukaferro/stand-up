@@ -68,8 +68,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function getPreviousMeeting() {
     const savedMeetings = JSON.parse(localStorage.getItem('meetings')) || [];
+    const apiMeetings = JSON.parse(localStorage.getItem('api_meetings')) || [];
 
-    const sortedMeetings = savedMeetings.sort((a, b) => new Date(b.date) - new Date(a.date));
+    let allMeetings = [...savedMeetings];
+
+    apiMeetings.forEach(apiMeeting => {
+      if (!allMeetings.some(m => m.date === apiMeeting.date)) {
+        allMeetings.push({
+          ...apiMeeting,
+          standUpsInfo: apiMeeting.notes || []
+        });
+      }
+    });
+
+    const sortedMeetings = allMeetings.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return sortedMeetings.length > 0 ? sortedMeetings[0] : null;
   }
@@ -112,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getPreviousNotes(devId) {
       if (!previousMeeting || !previousMeeting.standUpsInfo) return '';
 
-      const devInfo = previousMeeting.standUpsInfo.find(info => info.devId === devId);
+      const devInfo = previousMeeting.standUpsInfo.find(info => info.devId === parseInt(devId, 10));
       return devInfo ? devInfo.notes : '';
     }
 
