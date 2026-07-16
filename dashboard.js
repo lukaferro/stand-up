@@ -1,24 +1,21 @@
 async function updateCachedData(apiKey) {
   try {
-    const devsResponse = await fetch('https://standupparo-apis.vercel.app/api/devs', {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey
-      }
-    });
+    const [devsResponse, meetingsResponse] = await Promise.all([
+      fetch('https://standupparo-apis.vercel.app/api/devs', {
+        method: 'GET',
+        headers: { 'x-api-key': apiKey }
+      }),
+      fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
+        method: 'GET',
+        headers: { 'x-api-key': apiKey }
+      })
+    ]);
 
     if (devsResponse.ok) {
       const devs = await devsResponse.json();
       localStorage.setItem('developers', JSON.stringify(devs));
       console.log('Dati degli sviluppatori aggiornati in background');
     }
-
-    const meetingsResponse = await fetch('https://standupparo-apis.vercel.app/api/stand-ups', {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey
-      }
-    });
 
     if (meetingsResponse.ok) {
       const meetings = await meetingsResponse.json();
@@ -159,7 +156,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectedParticipantsInput.value = selectedIds.join(',');
   }
 
-  await populateParticipants();
+  updateCachedData(apiKey).then(() => {
+    populateParticipants();
+  });
 
   meetingForm.addEventListener('submit', (e) => {
     e.preventDefault();
