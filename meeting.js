@@ -1,5 +1,11 @@
+const API_KEY_FALLBACK = '40bd14d4d4b3aed9551fe612af5fd82695325cf2a88dbe6e6ff3e9f88339d5aa';
+
 document.addEventListener('DOMContentLoaded', async () => {
-  const apiKey = localStorage.getItem('apiKey');
+  let apiKey = localStorage.getItem('apiKey');
+  if (!apiKey) {
+    apiKey = API_KEY_FALLBACK;
+    localStorage.setItem('apiKey', apiKey);
+  }
   const devTableBody = document.querySelector('#devTable tbody');
   const endStandUpBtn = document.getElementById('endStandUpBtn');
   const meetingDateElement = document.getElementById('meetingDate');
@@ -7,7 +13,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const maxTimePerDevElement = document.getElementById('maxTimePerDev');
 
   if (!apiKey) {
-    alert('API Key non trovata. Effettua nuovamente il login.');
     window.location.href = 'index.html';
     return;
   }

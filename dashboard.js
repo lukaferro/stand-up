@@ -30,13 +30,19 @@ async function updateCachedData(apiKey) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const companyName = localStorage.getItem('companyName');
-  const apiKey = localStorage.getItem('apiKey');
+const API_KEY_FALLBACK = '40bd14d4d4b3aed9551fe612af5fd82695325cf2a88dbe6e6ff3e9f88339d5aa';
 
-  if (!companyName || !apiKey) {
-    window.location.href = 'index.html';
-    return;
+document.addEventListener('DOMContentLoaded', async () => {
+  let apiKey = localStorage.getItem('apiKey');
+  if (!apiKey) {
+    apiKey = API_KEY_FALLBACK;
+    localStorage.setItem('apiKey', apiKey);
+  }
+
+  let companyName = localStorage.getItem('companyName');
+  if (!companyName) {
+    companyName = 'Stand-Up Team';
+    localStorage.setItem('companyName', companyName);
   }
 
   updateCachedData(apiKey);
